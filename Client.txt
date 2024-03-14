@@ -1,0 +1,31 @@
+import socket
+
+def start_client(port):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(('127.0.0.1', port))
+
+    while True:
+        server_response = client_socket.recv(1024).decode()
+        print(server_response)
+
+        if "Congratulations" in server_response:
+            break
+        if "Game over" in server_response:
+            break
+
+        guess = input("Enter your guess: ").lower()
+        client_socket.sendall(guess.encode())
+       
+    client_socket.close()
+
+if __name__ == "__main__":
+   while True:
+        try:
+            port_number = int(input("Enter the initial port number (between 50000 and 65535): "))
+            if 50000 <= port_number <= 65535:
+                break  # Exit the loop if a valid port number is entered
+            else:
+                print("Invalid port number. Please enter a number between 50000 and 65535. This decreases likelihood of error")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+start_client(port_number)

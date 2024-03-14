@@ -1,0 +1,61 @@
+import socket
+
+def handle_client(client_socket):
+    word_to_guess = "arkansas"
+    guessed_word = ['_'] * len(word_to_guess)
+    guessed_letters = set()
+    incorrect_guesses = set()
+    attempts_left = 6
+
+    while attempts_left > 0:
+        guessed_display = ' '.join(letter if letter in guessed_letters else '_' for letter in word_to_guess)
+        client_socket.sendall(f"{guessed_display} Attempts left: {attempts_left}\n"
+                              f"Wrong guesses: {' '.join(incorrect_guesses)}\n".encode())
+
+        guess = client_socket.recv(1024).decode().lower()
+
+        if len(guess) == 1 and guess.isalpha():
+
+            guessed_letters.add(guess)
+            if guess in word_to_guess:
+                for i in range(len(word_to_guess)):
+                    if word_to_guess[i] == guess:
+                        guessed_word[i] = guess
+                if '_' not in guessed_word:
+                    client_socket.sendall(f"Congratulations! You guessed the word!\n {word_to_guess}".encode())
+                    break
+                
+            else:
+                if guess not in incorrect_guesses: 
+                    incorrect_guesses.add(guess)
+                    attempts_left -= 1
+        else:
+            client_socket.sendall("Invalid guess. Please enter a single letter.\n".encode())
+        guessed_display = ' '.join(letter if letter in guessed_letters else '_' for letter in word_to_guess)
+
+    client_socket.sendall("Game over, You Lost! Thanks for playing!\n".encode())
+    client_socket.close()
+
+def start_server(port):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('127.0.0.1', port))
+    server_socket.listen(1)
+    print(f"Server listening on port {port}")
+
+    while True:
+        client_socket, client_address = server_socket.accept()
+        print(f"Accepted connection from {client_address}")
+        handle_client(client_socket)
+        print("Waiting for another client...")
+
+if __name__ == "__main__":
+    while True:
+        try:
+            port_number = int(input("Enter the initial port number (between 50000 and 65535): "))
+            if 50000 <= port_number <= 65535:
+                break  # Exit the loop if a valid port number is entered
+            else:
+                print("Invalid port number. Please enter a number between 50000 and 65535. This decreases likelihood of error")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+    start_server(port_number)
